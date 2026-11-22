@@ -38,8 +38,8 @@ func ParsePacket(b []byte) (p ParsedPacket, ok bool) {
 	if len(b) < 20 {
 		return p, false
 	}
-	version := b[0] >> 4
-	if version == 4 {
+	switch version := b[0] >> 4; version {
+	case 4:
 		ihl := int(b[0]&0x0F) * 4
 		if len(b) < ihl || ihl < 20 {
 			return p, false
@@ -80,7 +80,7 @@ func ParsePacket(b []byte) (p ParsedPacket, ok bool) {
 			return p, true
 		}
 		return p, false
-	} else if version == 6 {
+	case 6:
 		if len(b) < 40 {
 			return p, false
 		}

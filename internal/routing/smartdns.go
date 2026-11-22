@@ -74,7 +74,7 @@ func makeControl(protect func(fd int) bool) func(network, address string, c sysc
 	if protect == nil {
 		return nil
 	}
-	return func(network, address string, c syscall.RawConn) error {
+	return func(_, _ string, c syscall.RawConn) error {
 		var protectErr error
 		err := c.Control(func(fd uintptr) {
 			if !protect(int(fd)) {
