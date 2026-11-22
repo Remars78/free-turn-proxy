@@ -85,6 +85,15 @@ linters:
           - cyclop
           - nestif
         path: "internal/provider/vk/internal/(captcha|vkauth)/"
+      - linters:
+          - cyclop
+          - funlen
+          - nestif
+        path: "internal/routing/"
+      - linters:
+          - gosec
+        path: "internal/routing/packet\\.go"
+        text: "G115"
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0

@@ -223,7 +223,7 @@ func (s *SmartDNS) queryOne(server string, query []byte, origID uint16) ([]byte,
 	if err != nil {
 		return nil, fmt.Errorf("dial upstream %s: %w", server, err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	_ = conn.SetDeadline(time.Now().Add(dnsTimeout))
 	if _, err := conn.Write(query); err != nil {

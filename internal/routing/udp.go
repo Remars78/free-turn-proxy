@@ -93,7 +93,7 @@ func (f *UDPForwarder) dial(dstIP netip.Addr, dstPort uint16) (*net.UDPConn, err
 	}
 	udpConn, ok := conn.(*net.UDPConn)
 	if !ok {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("expected *net.UDPConn, got %T", conn)
 	}
 	return udpConn, nil
