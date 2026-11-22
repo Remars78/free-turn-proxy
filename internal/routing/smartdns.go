@@ -226,20 +226,20 @@ func (s *SmartDNS) queryOne(server string, query []byte, origID uint16) ([]byte,
 	defer func() { _ = conn.Close() }()
 
 	_ = conn.SetDeadline(time.Now().Add(dnsTimeout))
-	if _, err := conn.Write(query); err != nil {
-		return nil, fmt.Errorf("write to upstream: %w", err)
+	if _, writeErr := conn.Write(query); writeErr != nil {
+		return nil, fmt.Errorf("write to upstream: %w", writeErr)
 	}
 
 	buf := make([]byte, 4096)
-	n, err := conn.Read(buf)
-	if err != nil {
-		return nil, fmt.Errorf("read from upstream: %w", err)
+	n, readErr := conn.Read(buf)
+	if readErr != nil {
+		return nil, fmt.Errorf("read from upstream: %w", readErr)
 	}
 
 	resp := buf[:n]
 	if len(resp) >= 2 {
-		resp[0] = byte(origID >> 8)
-		resp[1] = byte(origID)
+		resp[0] = byte((origID >> 8) & 0xFF)
+		resp[1] = byte(origID & 0xFF)
 	}
 
 	return resp, nil
