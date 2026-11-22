@@ -196,7 +196,6 @@ func TestParseClientJSONTCPMode(t *testing.T) {
 	}
 }
 
-
 func TestParseClientJSON_Routing(t *testing.T) {
 	data := `{"peer":"1.2.3.4:5000","vk":{"links":["abcdef"]},"routing":{"bypassZones":["ru","рф","su"],"bypassDomains":["sberbank.ru","custom.org"]}}`
 	c, err := ParseClientJSON([]byte(data), "")

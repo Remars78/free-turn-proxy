@@ -422,7 +422,6 @@ func TestParseClient_ProviderDirect(t *testing.T) {
 	}
 }
 
-
 func TestParseClient_RoutingFlags(t *testing.T) {
 	args := append(validClientArgs(), "-bypass-zones", "ru,xn--p1ai,su", "-bypass-domains", "sberbank.ru,custom.org")
 	c, err := ParseClient(args, io.Discard)

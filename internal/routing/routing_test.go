@@ -112,12 +112,12 @@ type mockTUN struct {
 	writePackets [][]byte
 }
 
-func (m *mockTUN) File() *os.File { return nil }
-func (m *mockTUN) MTU() (int, error) { return 1280, nil }
-func (m *mockTUN) Name() (string, error) { return "mock", nil }
+func (m *mockTUN) File() *os.File           { return nil }
+func (m *mockTUN) MTU() (int, error)        { return 1280, nil }
+func (m *mockTUN) Name() (string, error)    { return "mock", nil }
 func (m *mockTUN) Events() <-chan tun.Event { return nil }
-func (m *mockTUN) Close() error { return nil }
-func (m *mockTUN) BatchSize() int { return 1 }
+func (m *mockTUN) Close() error             { return nil }
+func (m *mockTUN) BatchSize() int           { return 1 }
 
 func (m *mockTUN) Read(bufs [][]byte, sizes []int, offset int) (int, error) {
 	if len(m.readPackets) == 0 {
