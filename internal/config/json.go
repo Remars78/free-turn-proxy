@@ -18,14 +18,20 @@ type ClientJSON struct {
 	Provider string `json:"provider"`
 	Routes   bool   `json:"routes"`
 
-	TURN   turnJSON   `json:"turn"`
-	Proxy  proxyJSON  `json:"proxy"`
-	VK     vkJSON     `json:"vk"`
-	Obf    obfJSON    `json:"obf"`
-	DNS    dnsJSON    `json:"dns"`
-	Log    logJSON    `json:"log"`
-	KCP    kcpJSON    `json:"kcp"`
-	Tunnel tunnelJSON `json:"tunnel"`
+	TURN    turnJSON    `json:"turn"`
+	Proxy   proxyJSON   `json:"proxy"`
+	VK      vkJSON      `json:"vk"`
+	Obf     obfJSON     `json:"obf"`
+	DNS     dnsJSON     `json:"dns"`
+	Log     logJSON     `json:"log"`
+	KCP     kcpJSON     `json:"kcp"`
+	Tunnel  tunnelJSON  `json:"tunnel"`
+	Routing routingJSON `json:"routing,omitempty"`
+}
+
+type routingJSON struct {
+	BypassZones   []string `json:"bypassZones,omitempty"`
+	BypassDomains []string `json:"bypassDomains,omitempty"`
 }
 
 // tunnelJSON - параметры встроенного wg-quick туннеля.
@@ -155,6 +161,10 @@ func defaultClientJSON() ClientJSON {
 			Config: r.TunnelConfig,
 			MTU:    r.TunnelMTU,
 		},
+		Routing: routingJSON{
+			BypassZones:   splitNonEmpty(r.BypassZones),
+			BypassDomains: splitNonEmpty(r.BypassDomains),
+		},
 	}
 }
 
@@ -195,6 +205,24 @@ func (j ClientJSON) toRaw() raw {
 		TunnelConfig: j.Tunnel.Config,
 		TunnelMTU:    j.Tunnel.MTU,
 
+		BypassZones:   strings.Join(j.Routing.BypassZones, ","),
+		BypassDomains: strings.Join(j.Routing.BypassDomains, ","),
+
 		KCP: j.KCP.profile(),
 	}
+}
+
+func splitNonEmpty(s string) []string {
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	out := make([]string, 0, len(parts))
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
 }

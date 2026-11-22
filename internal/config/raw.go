@@ -50,6 +50,9 @@ type raw struct {
 	TunnelConfig string
 	TunnelMTU    int
 
+	BypassZones   string
+	BypassDomains string
+
 	KCP kcpmux.Profile
 }
 
@@ -175,6 +178,12 @@ func assemble(r raw) (*Client, error) {
 
 	if r.DNSServers != "" {
 		c.DNS.Servers = strings.Split(r.DNSServers, ",")
+	}
+	if r.BypassZones != "" {
+		c.Routing.BypassZones = splitNonEmpty(r.BypassZones)
+	}
+	if r.BypassDomains != "" {
+		c.Routing.BypassDomains = splitNonEmpty(r.BypassDomains)
 	}
 
 	if c.Obf.GenKey {

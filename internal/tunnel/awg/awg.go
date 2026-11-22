@@ -13,21 +13,30 @@ import (
 	"github.com/amnezia-vpn/amneziawg-go/v3/device"
 
 	"github.com/samosvalishe/free-turn-proxy/internal/logx"
+	"github.com/samosvalishe/free-turn-proxy/internal/routing"
 	"github.com/samosvalishe/free-turn-proxy/internal/tunnel"
 )
+
+type RoutingOptions struct {
+	BypassZones   []string
+	BypassDomains []string
+	CarrierDNS    []string
+}
 
 type Deps struct {
 	Bind conn.Bind
 	Log  logx.Logger
 	// Protect исключает сокеты bind из туннеля (VpnService.protect); nil - бэкенд поверх пайпа релея.
 	Protect func(fd int) bool
+	Routing *RoutingOptions
 }
 
 type Backend struct {
 	deps Deps
 
-	mu  sync.Mutex
-	dev *device.Device
+	mu     sync.Mutex
+	dev    *device.Device
+	router *routing.TUNRouter
 }
 
 func New(deps Deps) *Backend {
@@ -52,6 +61,20 @@ func (b *Backend) Up(cfg *tunnel.Config, tunFD int) error {
 	tunDev, err := openTUN(tunFD)
 	if err != nil {
 		return err
+	}
+
+	if b.deps.Routing != nil && (len(b.deps.Routing.BypassZones) > 0 || len(b.deps.Routing.BypassDomains) > 0) {
+		r := routing.NewTUNRouter(tunDev, routing.Config{
+			BypassZones:   b.deps.Routing.BypassZones,
+			BypassDomains: b.deps.Routing.BypassDomains,
+			CarrierDNS:    b.deps.Routing.CarrierDNS,
+			Protect:       b.deps.Protect,
+			Logger:        b.deps.Log,
+		})
+		if tr, ok := r.(*routing.TUNRouter); ok {
+			b.router = tr
+		}
+		tunDev = r
 	}
 
 	bind := b.deps.Bind
@@ -80,6 +103,14 @@ func (b *Backend) Up(cfg *tunnel.Config, tunFD int) error {
 	}
 	b.deps.Log.Infof("tunnel: %s up, mtu %d, peers %d", mode, cfg.MTU, len(cfg.Peers))
 	return nil
+}
+
+func (b *Backend) SetCarrierDNS(servers []string) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.router != nil {
+		b.router.SetCarrierDNS(servers)
+	}
 }
 
 func (b *Backend) Rebind() error {
@@ -131,6 +162,7 @@ func (b *Backend) Down() error {
 	b.mu.Lock()
 	dev := b.dev
 	b.dev = nil
+	b.router = nil
 	b.mu.Unlock()
 
 	if dev == nil {

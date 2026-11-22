@@ -421,3 +421,18 @@ func TestParseClient_ProviderDirect(t *testing.T) {
 		t.Fatalf("explicit -n: %v, n=%d", err, c.TURN.N)
 	}
 }
+
+
+func TestParseClient_RoutingFlags(t *testing.T) {
+	args := append(validClientArgs(), "-bypass-zones", "ru,xn--p1ai,su", "-bypass-domains", "sberbank.ru,custom.org")
+	c, err := ParseClient(args, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Routing.BypassZones) != 3 || c.Routing.BypassZones[0] != "ru" || c.Routing.BypassZones[1] != "xn--p1ai" || c.Routing.BypassZones[2] != "su" {
+		t.Errorf("Routing.BypassZones: %v", c.Routing.BypassZones)
+	}
+	if len(c.Routing.BypassDomains) != 2 || c.Routing.BypassDomains[0] != "sberbank.ru" || c.Routing.BypassDomains[1] != "custom.org" {
+		t.Errorf("Routing.BypassDomains: %v", c.Routing.BypassDomains)
+	}
+}

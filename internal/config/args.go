@@ -40,6 +40,8 @@ func ClientArgs(c *Client) []string {
 	addIf(c.VK.Platform != def.VK.Platform, "-platform", string(c.VK.Platform))
 	addIf(c.DNS.Mode != def.DNS.Mode, "-dns-mode", c.DNS.Mode)
 	addIf(len(c.DNS.Servers) > 0, "-dns-servers", strings.Join(c.DNS.Servers, ","))
+	addIf(len(c.Routing.BypassZones) > 0, "-bypass-zones", strings.Join(c.Routing.BypassZones, ","))
+	addIf(len(c.Routing.BypassDomains) > 0, "-bypass-domains", strings.Join(c.Routing.BypassDomains, ","))
 	addIf(c.ClientID != "", "-client-id", c.ClientID)
 	addIf(c.SubURL != "", "-sub", c.SubURL)
 	addIf(c.Log.Debug, "-debug")

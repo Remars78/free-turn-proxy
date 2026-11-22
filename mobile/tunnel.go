@@ -129,7 +129,22 @@ func buildTunnel(cfg *config.Client, logger logx.Logger) (*tunnelParts, *tunnel.
 		deviceSide: deviceSide,
 		relaySide:  relaySide,
 	}
-	parts.backend = awg.New(awg.Deps{Bind: parts.bind, Log: logger})
+
+	var routingOpts *awg.RoutingOptions
+	if len(cfg.Routing.BypassZones) > 0 || len(cfg.Routing.BypassDomains) > 0 {
+		routingOpts = &awg.RoutingOptions{
+			BypassZones:   cfg.Routing.BypassZones,
+			BypassDomains: cfg.Routing.BypassDomains,
+			CarrierDNS:    cfg.DNS.Servers,
+		}
+	}
+
+	parts.backend = awg.New(awg.Deps{
+		Bind:    parts.bind,
+		Log:     logger,
+		Protect: protectFD,
+		Routing: routingOpts,
+	})
 	return parts, tunCfg, nil
 }
 

@@ -59,6 +59,8 @@ func ParseClient(args []string, errOut io.Writer) (*Client, error) {
 	fs.StringVar(&r.Platform, "platform", r.Platform, "класс устройства персоны VK-auth: desktop | mobile; только -provider vk")
 	fs.StringVar(&r.DNSMode, "dns-mode", r.DNSMode, "резолвер клиента: plain | doh | auto")
 	fs.StringVar(&r.DNSServers, "dns-servers", r.DNSServers, "свои UDP/53 DNS через запятую: ip[:port][,ip[:port]...]")
+	fs.StringVar(&r.BypassZones, "bypass-zones", r.BypassZones, "доменные зоны для обхода VPN через запятую (напр. ru,xn--p1ai,su)")
+	fs.StringVar(&r.BypassDomains, "bypass-domains", r.BypassDomains, "домены для обхода VPN через запятую")
 	fs.StringVar(&r.ClientID, "client-id", r.ClientID, "уникальный ID клиента (автогенерация если не задан)")
 	fs.StringVar(&r.SubURL, "sub", r.SubURL, "URL подписки (sub.md) для получения списка серверов")
 	fs.BoolVar(&r.Routes, "routes", r.Routes, "автоматическое управление маршрутами к TURN-серверам; требует прав администратора")
@@ -105,31 +107,27 @@ func ParseServer(args []string, errOut io.Writer) (*Server, error) {
 		fs.SetOutput(errOut)
 	}
 	listen := fs.String("listen", def.Proxy.Listen, "локальный адрес прослушивания ip:port")
-	connect := fs.String("connect", "", "локальный бэкенд host:port; обязательно: WG 127.0.0.1:51820 | Xray 127.0.0.1:443")
-	mode := fs.String("mode", string(def.Proxy.Mode), "режим туннеля: udp (WireGuard) | tcp (Xray/sing-box)")
 	obfProfile := fs.String("obf-profile", string(def.Obf.Profile), "wire-профиль обфускации: none | rtpopus | rtpopus2 | rtpopus3; должен совпадать с клиентом")
 	obfKey := fs.String("obf-key", "", "ключ для -obf-profile != none: 32 байта hex (64 символа)")
 	genObfKey := fs.Bool("gen-obf-key", false, "напечатать новый -obf-key и выйти")
-	obfTiming := fs.Duration("obf-timing", 0, "межпакетная задержка для RTP-мимикрии (напр. 10ms); 0=выкл")
+	mode := fs.String("mode", string(def.Proxy.Mode), "режим туннеля: udp (WireGuard) | tcp (Xray/sing-box)")
+	connect := fs.String("connect", def.Proxy.Connect, "адрес целевого сервиса для проброса трафика; только -mode udp")
+	clientsFile := fs.String("clients-file", "", "путь к JSON-файлу со списком разрешённых клиентов (клиентской базой)")
 	debug := fs.Bool("debug", false, "подробные debug-логи")
-	clientsFile := fs.String("clients-file", "", "путь к файлу clients.json для авторизации по Client ID")
 	kcp := registerKCPFlags(fs, def.KCP.Profile)
 
 	if err := fs.Parse(args); err != nil {
 		return nil, err
 	}
 
-	switch *mode {
-	case ModeUDP, ModeTCP:
-	default:
-		return nil, fmt.Errorf("invalid -mode value %q: must be %s | %s", *mode, ModeUDP, ModeTCP)
+	if *genObfKey {
+		return &Server{Obf: ObfOpts{GenKey: true}}, nil
 	}
 
 	s := &Server{
 		Obf: ObfOpts{
 			Profile: ObfProfile(*obfProfile),
 			GenKey:  *genObfKey,
-			Timing:  *obfTiming,
 		},
 		Proxy: ProxyOpts{
 			Mode:    ProxyMode(*mode),
@@ -141,10 +139,7 @@ func ParseServer(args []string, errOut io.Writer) (*Server, error) {
 		ClientsFile: *clientsFile,
 	}
 
-	if s.Obf.GenKey {
-		return s, nil
-	}
-	if err := ValidateServer(s); err != nil {
+	if err := validateObfProfile(s.Obf.Profile); err != nil {
 		return nil, err
 	}
 	key, err := rtpopus.DecodeKey(s.Obf.Enabled(), *obfKey)
@@ -153,5 +148,8 @@ func ParseServer(args []string, errOut io.Writer) (*Server, error) {
 	}
 	s.Obf.Key = key
 
+	if err := ValidateServer(s); err != nil {
+		return nil, err
+	}
 	return s, nil
 }

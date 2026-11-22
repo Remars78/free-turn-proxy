@@ -199,6 +199,18 @@ func SetDNSServers(servers string) {
 	dnsdial.SetUDPDNSServers(strings.Split(servers, ","))
 }
 
+// SetCarrierDNSServers подменяет список провайдерских DNS-серверов для Smart DNS.
+func SetCarrierDNSServers(servers string) {
+	mu.Lock()
+	defer mu.Unlock()
+	l := current.Load()
+	if l != nil && l.tunnel != nil && l.tunnel.backend != nil {
+		if b, ok := l.tunnel.backend.(*awg.Backend); ok {
+			b.SetCarrierDNS(strings.Split(servers, ","))
+		}
+	}
+}
+
 func stopLocked() {
 	l := current.Swap(nil)
 	if l == nil {

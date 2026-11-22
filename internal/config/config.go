@@ -92,6 +92,12 @@ type TunnelOpts struct {
 
 func (t TunnelOpts) Enabled() bool { return t.Mode != "" && t.Mode != tunnel.ModeNone }
 
+// RoutingOpts - параметры раздельного туннелирования (обход по доменным зонам и доменам).
+type RoutingOpts struct {
+	BypassZones   []string
+	BypassDomains []string
+}
+
 type Client struct {
 	TURN     TURNOpts
 	Obf      ObfOpts
@@ -102,6 +108,7 @@ type Client struct {
 	Log      LogOpts
 	KCP      KCPOpts
 	Tunnel   TunnelOpts
+	Routing  RoutingOpts
 	ClientID string
 	SubURL   string
 	Routes   bool

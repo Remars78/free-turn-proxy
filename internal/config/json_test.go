@@ -195,3 +195,18 @@ func TestParseClientJSONTCPMode(t *testing.T) {
 		t.Errorf("Proxy.Mode = %q, want tcp", c.Proxy.Mode)
 	}
 }
+
+
+func TestParseClientJSON_Routing(t *testing.T) {
+	data := `{"peer":"1.2.3.4:5000","vk":{"links":["abcdef"]},"routing":{"bypassZones":["ru","рф","su"],"bypassDomains":["sberbank.ru","custom.org"]}}`
+	c, err := ParseClientJSON([]byte(data), "")
+	if err != nil {
+		t.Fatalf("ParseClientJSON() error = %v", err)
+	}
+	if len(c.Routing.BypassZones) != 3 || c.Routing.BypassZones[0] != "ru" || c.Routing.BypassZones[1] != "рф" || c.Routing.BypassZones[2] != "su" {
+		t.Errorf("Routing.BypassZones = %v, want [ru рф su]", c.Routing.BypassZones)
+	}
+	if len(c.Routing.BypassDomains) != 2 || c.Routing.BypassDomains[0] != "sberbank.ru" || c.Routing.BypassDomains[1] != "custom.org" {
+		t.Errorf("Routing.BypassDomains = %v, want [sberbank.ru custom.org]", c.Routing.BypassDomains)
+	}
+}
